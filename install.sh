@@ -32,8 +32,8 @@ cd
 mkdir ~/wordlists/
 cd ~/wordlists/ && wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/big.txt
 wget https://gist.githubusercontent.com/Lopseg/33106eb13372a72a31154e0bbab2d2b3/raw/a79331799a70d0ae0ea906f2b143996d85f71de5/dicc.txt
-https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/dns-Jhaddix.txt
-mv dns-Jhaddix.txt dns.txt
+wget https://wordlists-cdn.assetnote.io/data/manual/best-dns-wordlist.txt
+mv best-dns-wordlist.txt dns.txt
 clear
 echo "All python tools are installed"
 sleep 2s
