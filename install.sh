@@ -1,20 +1,18 @@
 #!/bin/bash
-
 echo "Make sure you're root before installing the tools"
-sleep 5s
+sleep 5
 clear
 echo "Installing all dependencies"
 cd
-sudo apt-get install git
-sudo apt-get install python3
-sudo apt-get install python3-pip
-sudo apt-get install ruby
-sudo apt-get install golang-go
-sudo apt install snapd
-sudo apt install cmake
-sudo apt install jq
-sudo snap install chromium
-sleep 2s
+sudo apt-get install git -y
+sudo apt-get install python3 -y
+sudo apt-get install python3-pip -y
+sudo apt-get install ruby -y
+sudo apt install snapd -y
+sudo apt install cmake -y
+sudo apt install jq -y
+sudo snap install chromium -y
+sleep 2
 clear
 echo "Installing python tools"
 mkdir -p ~/tools
@@ -36,7 +34,7 @@ wget https://wordlists-cdn.assetnote.io/data/manual/best-dns-wordlist.txt
 mv best-dns-wordlist.txt dns.txt
 clear
 echo "All python tools are installed"
-sleep 2s
+sleep 2
 echo "Installing go-lang tools"
 go get github.com/michenriksen/aquatone
 go get -u github.com/tomnomnom/assetfinder
@@ -67,6 +65,6 @@ git clone https://github.com/1ndianl33t/Gf-Patterns
 mv ~/Gf-Patterns/*.json ~/.gf
 sudo cp ~/go/bin/* /usr/bin/
 nuclei -update-templates
-sleep 2s
+sleep 2
 clear
 echo -e "Please add your slack webhook in ~/.config/notify/notify.conf file"

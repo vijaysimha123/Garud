@@ -181,15 +181,15 @@ run_subenum() {
     fi
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Filtering valid subdomains of $domain [${GREEN}${BLINK}35%${NORMAL}] \r"
     sleep 1s
-    cat domains/finalsubdomains.txt | sort -u | uniq -u | httpx -threads $thrds -tls-probe -csp-probe -silent | anew -q domains/activeurls.txt &> /dev/null
+    cat domains/finalsubdomains.txt | sort -u | uniq -u | httpx -threads 1500 -ports 1-65535 -tls-probe -csp-probe -silent | anew -q domains/activeurls.txt &> /dev/null
     cat domains/activeurls.txt | sed -E 's/^\s*.*:\/\///g' | anew -q domains/hosts.txt &> /dev/null
 }
 
 run_info() {
     sleep 1s
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Fetching some imformations of valid subdomains of $domain [${GREEN}${BLINK}40%${NORMAL}] \r"
-    cat domains/activeurls.txt | httpx -threads $thrds -status-code -title -silent | anew -q domains/info/titles.txt
-    cat domains/activeurls.txt | aquatone -chrome-path /snap/bin/chromium -out domains/info/aquatone/ -threads 10 -silent &> /dev/null
+    cat domains/activeurls.txt | httpx -threads 2000 -status-code -title -silent | anew -q domains/info/titles.txt
+    cat domains/activeurls.txt | aquatone -chrome-path /snap/bin/chromium -out domains/info/aquatone/ -threads 250 -silent &> /dev/null
 }
 
 run_params() {
@@ -215,21 +215,21 @@ run_gf() {
 check_crlf() {
     sleep 1s
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for crlf in $domain [${GREEN}${BLINK}85%${NORMAL}] \r"
-    crlfuzz -l domains/activeurls.txt -c $thrds -s | anew scanresults/crlf/output.txt | notify -silent &> /dev/null
+    crlfuzz -l domains/activeurls.txt -c $thrds -s | anew scanresults/crlf/output.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
 }
 
 check_mail() {
     sleep 1s
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for email spoofing errors in $domain [${GREEN}${BLINK}86%${NORMAL}] \r"
-    for target in $(echo "$domain"); do if [[ $(curl --connect-timeout 3 -kls --max-time 3 -d "serial=fred12&domain=${target}" -H "Content-Type: application/x-www-form-urlencoded" -X POST "https://www.kitterman.com/spf/getspf3.py") =~ 'SPF record passed validation test with pySPF' ]]; then echo -e "VULNERABLE: ${target}"; else echo -e "NOT VULNERABLE: ${target}"; fi done | anew scanresults/mail/spf.txt | notify -silent &> /dev/null
-    for target in $(echo "$domain"); do if [[ $(curl --connect-timeout 3 -kls --max-time 3 -X GET "https://dmarcly.com/server/dmarc_check.php?domain=${target}") =~ 'success' ]]; then echo -e "VULNERABLE: ${target}"; else echo -e "NOT VULNERABLE: ${target}"; fi done | anew scanresults/mail/email.txt | notify -silent &> /dev/null
+    for target in $(echo "$domain"); do if [[ $(curl --connect-timeout 3 -kls --max-time 3 -d "serial=fred12&domain=${target}" -H "Content-Type: application/x-www-form-urlencoded" -X POST "https://www.kitterman.com/spf/getspf3.py") =~ 'SPF record passed validation test with pySPF' ]]; then echo -e "VULNERABLE: ${target}"; else echo -e "NOT VULNERABLE: ${target}"; fi done | anew scanresults/mail/spf.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
+    for target in $(echo "$domain"); do if [[ $(curl --connect-timeout 3 -kls --max-time 3 -X GET "https://dmarcly.com/server/dmarc_check.php?domain=${target}") =~ 'success' ]]; then echo -e "VULNERABLE: ${target}"; else echo -e "NOT VULNERABLE: ${target}"; fi done | anew scanresults/mail/email.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
 }
 
 check_ssti() {
     sleep 1s
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for ssti vulnerabilities in $domain [${GREEN}${BLINK}87%${NORMAL}] \r"
     cat ~/tools/payloads/ssti.txt | while read -r line; do cat parameters/patterns/ssti.txt | qsreplace "$line" | anew -q ssticheck.txt;done &> /dev/null
-    cat ssticheck.txt | xargs -P 100 -I host bash -c "curl -s -L 'host' | grep \"check-ssti49\" && echo -e \"[VULNERABLE] - host \n \"" 2> /dev/null | grep "VULNERABLE" | anew scanresults/ssti/output.txt | notify -silent &> /dev/null
+    cat ssticheck.txt | xargs -P 100 -I host bash -c "curl -s -L 'host' | grep \"check-ssti49\" && echo -e \"[VULNERABLE] - host \n \"" 2> /dev/null | grep "VULNERABLE" | anew scanresults/ssti/output.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
     rm -rf ssticheck.txt
 }
 
@@ -237,24 +237,24 @@ check_lfi() {
     sleep 1s
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for lfi vulnerabilities in $domain [${GREEN}${BLINK}88%${NORMAL}] \r"
     cat ~/tools/payloads/lfi.txt | while read -r line; do cat parameters/patterns/lfi.txt | qsreplace "$line" | anew -q lficheck.txt;done &> /dev/null
-    cat lficheck.txt | xargs -P 100 -I host bash -c "curl -s -L 'host' | grep \"root:x:\" && echo -e \"[VULNERABLE] - host \n \"" 2> /dev/null| grep "VULNERABLE" | anew scanresults/lfi/output.txt | notify -silent &> /dev/null # fixed false positive
+    cat lficheck.txt | xargs -P 100 -I host bash -c "curl -s -L 'host' | grep \"root:x:\" && echo -e \"[VULNERABLE] - host \n \"" 2> /dev/null| grep "VULNERABLE" | anew scanresults/lfi/output.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null # fixed false positive
     rm -rf lficheck.txt
 }
 
 check_nuclei() {
     sleep 1s
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Scanning for vulnerabilities of $domain using nuclei [${GREEN}${BLINK}89%${NORMAL}] \r"
-    cat domains/activeurls.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity low -c 500 -nc -silent;done | anew scanresults/nuclei/low.txt | notify -silent &> /dev/null
-    cat domains/activeurls.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity medium -c 500 -nc -silent;done | anew scanresults/nuclei/medium.txt | notify -silent &> /dev/null
-    cat domains/activeurls.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity high -c 500 -nc -silent;done | anew scanresults/nuclei/high.txt | notify -silent &> /dev/null
-    cat domains/activeurls.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity critical -c 500 -nc -silent;done | anew scanresults/nuclei/critical.txt | notify -silent &> /dev/null
+    cat domains/activeurls.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity low -c 500 -nc -silent;done | anew scanresults/nuclei/low.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
+    cat domains/activeurls.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity medium -c 500 -nc -silent;done | anew scanresults/nuclei/medium.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
+    cat domains/activeurls.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity high -c 500 -nc -silent;done | anew scanresults/nuclei/high.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
+    cat domains/activeurls.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity critical -c 500 -nc -silent;done | anew scanresults/nuclei/critical.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
 }
 
 check_infoleak() {
     sleep 1s
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Scanning for directories and sensitive files of $domain [${GREEN}${BLINK}90%${NORMAL}] \r"
     cat parameters/allParameters.txt | cut -d"?" -f1 | cut -d"=" -f1 | anew -q removed.txt &> /dev/null
-    cat removed.txt | grep -iaE "([^.]+)\.zip$|([^.]+)\.zip\.[0-9]+$|([^.]+)\.zip[0-9]+$|([^.]+)\.zip[a-z][A-Z][0-9]+$|([^.]+)\.zip\.[a-z][A-Z][0-9]+$|([^.]+)\.rar$|([^.]+)\.tar$|([^.]+)\.tar\.gz$|([^.]+)\.tgz$|([^.]+)\.sql$|([^.]+)\.db$|([^.]+)\.sqlite$|([^.]+)\.pgsql\.txt$|([^.]+)\.mysql\.txt$|([^.]+)\.gz$|([^.]+)\.config$|([^.]+)\.log$|([^.]+)\.bak$|([^.]+)\.backup$|([^.]+)\.bkp$|([^.]+)\.crt$|([^.]+)\.dat$|([^.]+)\.eml$|([^.]+)\.java$|([^.]+)\.lst$|([^.]+)\.key$|([^.]+)\.passwd$|([^.]+)\.pl$|([^.]+)\.pwd$|([^.]+)\.mysql-connect$|([^.]+)\.jar$|([^.]+)\.cfg$|([^.]+)\.dir$|([^.]+)\.orig$|([^.]+)\.bz2$|([^.]+)\.old$|([^.]+)\.vbs$|([^.]+)\.img$|([^.]+)\.inf$|([^.]+)\.sh$|([^.]+)\.py$|([^.]+)\.vbproj$|([^.]+)\.mysql-pconnect$|([^.]+)\.war$|([^.]+)\.go$|([^.]+)\.psql$|([^.]+)\.sql\.gz$|([^.]+)\.vb$|([^.]+)\.webinfo$|([^.]+)\.jnlp$|([^.]+)\.cgi$|([^.]+)\.temp$|([^.]+)\.ini$|([^.]+)\.webproj$|([^.]+)\.xsql$|([^.]+)\.raw$|([^.]+)\.inc$|([^.]+)\.lck$|([^.]+)\.nz$|([^.]+)\.rc$|([^.]+)\.html\.gz$|([^.]+)\.gz$|([^.]+)\.env$|([^.]+)\.yml$" | httpx -silent -follow-host-redirects | anew scanresults/files/output.txt | notify -silent &> /dev/null
+    cat removed.txt | grep -iaE "([^.]+)\.zip$|([^.]+)\.zip\.[0-9]+$|([^.]+)\.zip[0-9]+$|([^.]+)\.zip[a-z][A-Z][0-9]+$|([^.]+)\.zip\.[a-z][A-Z][0-9]+$|([^.]+)\.rar$|([^.]+)\.tar$|([^.]+)\.tar\.gz$|([^.]+)\.tgz$|([^.]+)\.sql$|([^.]+)\.db$|([^.]+)\.sqlite$|([^.]+)\.pgsql\.txt$|([^.]+)\.mysql\.txt$|([^.]+)\.gz$|([^.]+)\.config$|([^.]+)\.log$|([^.]+)\.bak$|([^.]+)\.backup$|([^.]+)\.bkp$|([^.]+)\.crt$|([^.]+)\.dat$|([^.]+)\.eml$|([^.]+)\.java$|([^.]+)\.lst$|([^.]+)\.key$|([^.]+)\.passwd$|([^.]+)\.pl$|([^.]+)\.pwd$|([^.]+)\.mysql-connect$|([^.]+)\.jar$|([^.]+)\.cfg$|([^.]+)\.dir$|([^.]+)\.orig$|([^.]+)\.bz2$|([^.]+)\.old$|([^.]+)\.vbs$|([^.]+)\.img$|([^.]+)\.inf$|([^.]+)\.sh$|([^.]+)\.py$|([^.]+)\.vbproj$|([^.]+)\.mysql-pconnect$|([^.]+)\.war$|([^.]+)\.go$|([^.]+)\.psql$|([^.]+)\.sql\.gz$|([^.]+)\.vb$|([^.]+)\.webinfo$|([^.]+)\.jnlp$|([^.]+)\.cgi$|([^.]+)\.temp$|([^.]+)\.ini$|([^.]+)\.webproj$|([^.]+)\.xsql$|([^.]+)\.raw$|([^.]+)\.inc$|([^.]+)\.lck$|([^.]+)\.nz$|([^.]+)\.rc$|([^.]+)\.html\.gz$|([^.]+)\.gz$|([^.]+)\.env$|([^.]+)\.yml$" | httpx -silent -follow-host-redirects | anew scanresults/files/output.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
     rm -rf removed.txt
 }
 
@@ -268,7 +268,7 @@ check_xss() {
     sleep 1s
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for xss in $domain [${GREEN}${BLINK}95%${NORMAL}] \r"
     cat parameters/patterns/xss.txt | xargs -P 30 -I % bash -c "echo % | kxss" 2> /dev/null | grep "< >" | anew -q scanresults/xss/kxss.txt &> /dev/null
-    cat parameters/patterns/xss.txt | qsreplace "\">/><svg/onload=confirm(document.domain)>" 2> dev/null | xargs -P 50 -I % bash -c "curl -s -L --insecure '%' | grep \"<svg/onload=confirm(document.domain)>\" && echo -e \"[POTENTIAL XSS] - % \n \"" 2> /dev/null | grep "POTENTIAL XSS" | anew scanresults/xss/xss.txt | notify -silent &> /dev/null
+    cat parameters/patterns/xss.txt | qsreplace "\">/><svg/onload=confirm(document.domain)>" 2> /dev/null | xargs -P 50 -I % bash -c "curl -s -L --insecure '%' | grep \"<svg/onload=confirm(document.domain)>\" && echo -e \"[POTENTIAL XSS] - % \n \"" 2> /dev/null | grep "POTENTIAL XSS" | anew scanresults/xss/xss.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
     if [ -n "$bxssServer" ]
         then
             dalfox file parameters/patterns/xss.txt pipe --silence --no-color --no-spinner --mass --mass-worker 100 --skip-bav -w $thrds -b $bxssServer 2> /dev/null | anew -q scanresults/xss/dalfox.txt &> /dev/null
@@ -278,9 +278,9 @@ check_xss() {
 check_open() {
     sleep 1s
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for open redirection in $domain [${GREEN}${BLINK}97%${NORMAL}] \r"
-    cat parameters/patterns/redirect.txt | qsreplace "http://www.evil.com/" 2> /dev/null | xargs -P 50 -I % bash -c "curl -s -iL '%' | grep \"Evil.Com - We get it...Daily\" && echo -e \"[VULNERABLE] - % \n \"" 2> /dev/null | grep "VULNERABLE" | anew vulnerabilities/injections/redirect.txt | notify -silent &> /dev/null #fixed this oneliner false-positive output
+    cat parameters/patterns/redirect.txt | qsreplace "http://www.evil.com/" 2> /dev/null | xargs -P 50 -I % bash -c "curl -s -iL '%' | grep \"Evil.Com - We get it...Daily\" && echo -e \"[VULNERABLE] - % \n \"" 2> /dev/null | grep "VULNERABLE" | anew vulnerabilities/injections/redirect.txt | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null #fixed this oneliner false-positive output
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Fuzzing for directories of $domain [${GREEN}${BLINK}98%${NORMAL}] \r"
-    interlace -tL domains/activeurls.txt -threads 10 -c "fuzzy _target_ ~/wordlists/big.txt" &> /dev/null
+    interlace -tL domains/activeurls.txt -threads 200 -c "fuzzy _target_ ~/wordlists/big.txt" &> /dev/null
     sleep 1s
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Setting things up for $domain [${GREEN}${BLINK}100%${NORMAL}] \r"
     sleep 1s
@@ -291,9 +291,9 @@ check_open() {
 final_bot() {
     sleep 2s
     echo -e "${NORMAL}${BOLD}${YELLOW}\n ●Sending Notifications.....\n"
-    echo -e "$(cat domains/finalsubdomains.txt | wc -l) subdomains found of $domain" | notify -silent &> /dev/null
-    echo -e "$(cat domains/activeurls.txt | wc -l) active urls found of $domain" | notify -silent &> /dev/null
-    echo -e "Hii $(whoami),\nRecon completed for $domain.\nAll your outputs are saved in $(pwd).\n Thanks for using Garud" | notify -silent &> /dev/null
+    echo -e "$(cat domains/finalsubdomains.txt | wc -l) subdomains found of $domain" | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
+    echo -e "$(cat domains/activeurls.txt | wc -l) active urls found of $domain" | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
+    echo -e "Hii $(whoami),\nRecon completed for $domain.\nAll your outputs are saved in $(pwd).\n Thanks for using Garud" | notify -silent -slack -slack-webhook-url https://hooks.slack.com/services/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 -slack-username Garud -slack-channel rengine &> /dev/null
 }
 
 run_scans() {
