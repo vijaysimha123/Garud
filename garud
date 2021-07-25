@@ -169,8 +169,8 @@ run_subenum() {
     assetfinder --subs-only $domain | anew -q domains/assetfinder.txt &> /dev/null
     python3 ~/tools/Sublist3r/sublist3r.py -d $domain -o domains/sublister.txt &> /dev/null
     subfinder -silent -d $domain -all -t $thrds -o domains/subfinder.txt > /dev/null
-    amass enum -passive -norecursive -noalts -d $domain -o domains/amass.txt &> /dev/null
-    amass enum -active -brute -w ~/wordlists/dns.txt -d $target -o domains/amassact.txt &> /dev/null
+    amass enum -passive -norecursive -config ~/wordlists/amassconfig.txt -noalts -d $domain -o domains/amass.txt &> /dev/null
+    amass enum -active -brute -w ~/wordlists/dns.txt -config ~/wordlists/amassconfig.txt -d $target -o domains/amassact.txt &> /dev/null
     echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Filtering subdomains of $domain [${GREEN}${BLINK}30%${NORMAL}] \r"
     sleep 1s
     if [ -f "$excl" ]
